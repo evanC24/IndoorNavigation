@@ -1,35 +1,45 @@
 import Foundation
 
 /// A class that represents a 2D map with a specified width and height, containing obstacles and a grid of points for navigation.
-/// It generates a grid of `Point` objects that represent walkable and non-walkable areas based on the defined obstacles.
+/// It generates a grid of `Point` objects, categorizing them as walkable or non-walkable based on the defined obstacles.
+/// The map also supports pathfinding with weighted factors for distance and obstacle proximity.
 /// - Available: iOS 13.0+
 @available(iOS 13.0, *)
 public class Map {
     
-    /// The width of the map.
+    /// The width of the map, representing the distance along the x-axis.
     public var width: Float
     
-    /// The height of the map.
+    /// The height of the map, representing the distance along the y-axis.
     public var height: Float
     
-    /// A collection of obstacles that are present on the map.
+    /// A collection of obstacles present on the map that define non-walkable areas.
     public var obstacles: [any Obstacle]
     
-    /// The distance between each point in the grid.
+    /// The distance between each point in the grid, determining the resolution of the map.
     public var step: Float = 0.1
     
-    /// A 2D array of `Point` objects that represent the grid of the map.
+    /// A 2D array of `Point` objects that represents the grid of the map.
+    /// Each `Point` indicates if it is walkable based on the proximity to obstacles.
     public var points: [[Point]] = []
+    
+    /// A factor that determines the weight given to the direct distance when calculating movement cost.
+    public var shortestPathFactor: Float
+    
+    /// A computed property that gives the weight for proximity penalty when calculating movement cost.
+    /// It is derived as the complement of `shortestPathFactor`.
+    public var proximityObstacleFactor: Float { 1 - shortestPathFactor }
 
     /// Initializes a `Map` instance with a given width, height, and a list of obstacles.
     /// - Parameters:
-    ///   - width: The width of the map.
-    ///   - height: The height of the map.
-    ///   - obstacles: An array of `Obstacle` objects that define non-walkable areas.
-    public init(width: Float, height: Float, obstacles: [any Obstacle]) {
+    ///   - width: The width of the map, representing the x-axis range.
+    ///   - height: The height of the map, representing the y-axis range.
+    ///   - obstacles: An array of `Obstacle` objects that define non-walkable regions on the map.
+    public init(width: Float, height: Float, obstacles: [any Obstacle], shortestPathFactor: Float) {
         self.width = width
         self.height = height
         self.obstacles = obstacles
+        self.shortestPathFactor = shortestPathFactor
         self.generatePoints()
     }
 
@@ -117,20 +127,30 @@ public class Map {
         let distance = hypot(next.x - current.x, next.y - current.y)
         
         // Calculate a proximity penalty based on the closest obstacle
-        var obstaclePenalty: Float = 0
-        if let closestEdgePoint = self.obstacles.compactMap({ $0.getClosestEdgePoint(of: next) })
+        var penalty: Float = 0
+        
+        if let closestObstacleEdgePoint = self.obstacles.compactMap({ $0.getClosestEdgePoint(of: next) })
             .min(by: { euclideanDistance(from: $0, to: next) < euclideanDistance(from: $1, to: next) }) {
-            let edgeDistance = euclideanDistance(from: next, to: closestEdgePoint)
+            
+            let closestBoundariesDistance = self.getClosestBoundariesDistance(from: next)
+            
+            let edgeDistance = euclideanDistance(from: next, to: closestObstacleEdgePoint)
+            
+            let closestDistance = min(closestBoundariesDistance, edgeDistance)
             
             // Invert the edge distance to create a penalty: closer points get a higher penalty
-            obstaclePenalty = edgeDistance == 0 ? Float.greatestFiniteMagnitude : 1 / edgeDistance
+            penalty = closestDistance == 0 ? Float.greatestFiniteMagnitude : 1 / closestDistance
         }
         
-        // Weight for the distance and obstacle penalty
-        let shortestPathFactor: Float = 0.5 // Weight for direct distance
-        let proximityObstacleFactor: Float = 1 - shortestPathFactor // Weight for proximity penalty
-        
-        return shortestPathFactor * distance + proximityObstacleFactor * obstaclePenalty
+        return shortestPathFactor * distance + proximityObstacleFactor * penalty
+    }
+
+    func getClosestBoundariesDistance(from point: Point) -> Float {
+        let distanceToLeft = point.x
+        let distanceToRight = width - point.x
+        let distanceToBottom = point.y
+        let distanceToTop = height - point.y
+        return min(distanceToLeft, distanceToRight, distanceToBottom, distanceToTop)
     }
 
 
