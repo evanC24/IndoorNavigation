@@ -58,8 +58,12 @@ public func euclideanDistance(from start: Point, to end: Point) -> Float {
 ///   - path: An array of `Point` objects representing the path.
 ///   - currentLocation: The current location as a `Point`.
 /// - Returns: The point on the path that is closest to the current location, or `nil` if the path is empty.
-public func findClosestPathPoint(from path: [Point], to currentLocation: Point) -> Point? {
+public func findClosestPathPoint(path: [Point], from currentLocation: Point) -> Point? {
     guard !path.isEmpty else { return nil }
     
+//    var filteredPath = path.filter { $0 != currentLocation }
+//    filteredPath.removeFirst(5)
+//    return filteredPath.min(by: { euclideanDistance(from: $0, to: currentLocation) < euclideanDistance(from: $1, to: currentLocation) })
     return path.min(by: { euclideanDistance(from: $0, to: currentLocation) < euclideanDistance(from: $1, to: currentLocation) })
 }
+
