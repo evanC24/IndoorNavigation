@@ -17,11 +17,11 @@ public struct FloorsWrapper: Codable {
 ///            or `nil` if the file could not be found, if decoding fails, or if no floor with the given ID is found.
 /// - Note: This function is available starting from iOS 13.0.
 @available(iOS 13.0, *)
-public func loadFloorData(from fileName: String, for floorId: String) -> (endLocations: [Point], obstacles: [RectangleObstacle])? {
+public func loadFloorData(from fileName: String, for floorId: String) -> (endLocations: [Point], obstacles: [RectangleObstacle]) {
     // Get the URL for the file in the app bundle
     guard let fileURL = Bundle.main.url(forResource: fileName, withExtension: "json") else {
         print("Failed to find file: \(fileName)")
-        return nil
+        return  ([],[])
     }
     
     do {
@@ -34,13 +34,13 @@ public func loadFloorData(from fileName: String, for floorId: String) -> (endLoc
         // Search for the floor with the given ID
         guard let floor = decodedData.floors.first(where: { $0.floorId == floorId }) else {
             print("No floor found with ID: \(floorId)")
-            return nil
+            return ([],[])
         }
         
         // Return the endLocations and obstacles of the found floor
         return (floor.endLocations, floor.obstacles)
     } catch {
         print("Failed to decode JSON: \(error)")
-        return nil
+        return  ([],[])
     }
 }

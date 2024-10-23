@@ -1,4 +1,5 @@
 import Foundation
+import CoreGraphics
 
 /// A class that represents a 2D map with a specified width and height, containing obstacles and a grid of points for navigation.
 /// It generates a grid of `Point` objects, categorizing them as walkable or non-walkable based on the defined obstacles.
@@ -78,16 +79,81 @@ public class Map {
 
         let graph = Graph(
             neighbors: { return self.getNeighbors(point: $0) },
-            cost: { return self.cost($0, $1) }
-            //            cost: { return euclideanDistance(from: $0, to: $1) }
+//            neighbors: {return self.neighbors(point: $0, direction: $1)},
+//            cost: { return self.cost($0, $1) }
+//                        cost: { return euclideanDistance(from: $0, to: $1) }
+            cost: { return self.costWithTurnPenalty(from: $0, to: $1, previous: $2) }
         )
         
         // Perform A* search to find the shortest path, using Euclidean distance as the heuristic.
-        let (cameFrom, _) = graph.aStarSearch(start: start, end: goal, heuristic: euclideanDistance)
+//        let (cameFrom, _) = graph.aStarSearch(start: start, end: goal, heuristic: self.cost)
+//        let (cameFrom, _) = graph.aStarSearch(start: start, end: goal, heuristic: euclideanDistance)
+#warning("consider passing euclideandistance")
+        let (cameFrom, _) = graph.aStarSearch(start: start, end: goal, heuristic: self.costWithTurnPenalty)
         
         // Reconstruct and return the path from the A* search results.
         return reconstructPath(cameFrom: cameFrom, start: start, goal: goal)
     }
+    
+    /// Calculates the movement cost from one point to another, including a turn penalty.
+    /// - Parameters:
+    ///   - from: The starting point.
+    ///   - to: The destination point.
+    ///   - previous: The previous point in the path, if available.
+    /// - Returns: The total movement cost rounded to two decimal places, including any turn penalties.
+    public func costWithTurnPenalty(from: Point, to: Point, previous: Point?) -> Float {
+
+        print("point: (\(from.x), \(from.y))")
+        
+        // Calculate the base Euclidean distance.
+        let baseCost = euclideanDistance(from: from, to: to)
+        print("baseCost: \(roundToDecimal(baseCost, places: 2))")
+        
+        // Check if there is a previous point.
+        guard let previous = previous else {
+            // Round the base cost before returning it.
+            return roundToDecimal(baseCost, places: 2)
+        }
+
+        // Calculate the angles between the 3 points.
+        let angle1 = atan2(from.y - previous.y, from.x - previous.x)
+        let angle2 = atan2(to.y - from.y, to.x - from.x)
+
+        // Calculate the absolute difference between the angles.
+        var angleDifference = abs(angle2 - angle1)
+        print("angledifference: \(angleDifference)")
+        
+        // If the angle difference exceeds π, adjust it to the correct range, includes turn to right/left
+        if angleDifference > Float.pi {
+            angleDifference = 2 * Float.pi - angleDifference
+        }
+
+        // If the angle difference is below the minimum threshold, set it to 0 (no turn).
+        let minAngleThreshold: Float = 0.5
+        if angleDifference < minAngleThreshold {
+            angleDifference = 0
+        }
+
+        // Add a penalty based on the angle difference.
+        let safetyMultiplier: Float = 0.1 // Multiplier for the angular penalty.
+        let anglePenalty = angleDifference * safetyMultiplier
+
+        // Add the base turn penalty and the angular penalty.
+        let turnPenaltyWeight: Float = 1.0 // Base turn penalty.
+        let turnPenalty: Float = turnPenaltyWeight + anglePenalty
+
+        // Calculate the total cost by adding the penalty to the base distance.
+        let totalCost = baseCost + turnPenalty
+        print("totalcost (rounded): \(roundToDecimal(totalCost, places: 2))\n\n")
+
+        // Return the total cost rounded to two decimal places.
+        return roundToDecimal(totalCost, places: 2)
+    }
+
+
+
+
+
     
 //    public func isPointTooCloseToObstacle(_ point: Point) -> Bool {
 //        return obstacles.contains {
@@ -145,13 +211,52 @@ public class Map {
         return shortestPathFactor * distance + proximityObstacleFactor * penalty
     }
 
+    /// Calculates the minimum distance from a given point to the closest boundary of the area.
+    /// - Parameter point: The point for which to find the closest distance to the boundaries.
+    /// - Returns: The minimum distance from the point to any of the boundaries (left, right, top, or bottom).
     func getClosestBoundariesDistance(from point: Point) -> Float {
+        // Calculate the distance to the left boundary (x = 0)
         let distanceToLeft = point.x
+        
+        // Calculate the distance to the right boundary (x = width)
         let distanceToRight = width - point.x
+        
+        // Calculate the distance to the bottom boundary (y = 0)
         let distanceToBottom = point.y
+        
+        // Calculate the distance to the top boundary (y = height)
         let distanceToTop = height - point.y
+        
+        // Return the minimum of all distances (closest boundary)
         return min(distanceToLeft, distanceToRight, distanceToBottom, distanceToTop)
     }
+
+//
+//    public func neighbors(point: Point, direction: Direction) -> [(Point, Direction)] {
+//        var res = [(Point, Direction)]()
+//        
+//        switch direction {
+//        case .up:
+//            res.append((Point(x: point.x, y: point.y + 1), .up)) // Move straight
+//            res.append((Point(x: point.x, y: point.y), .right)) // Turn right
+//            res.append((Point(x: point.x, y: point.y), .left)) // Turn left
+//        case .down:
+//            res.append((Point(x: point.x, y: point.y - 1), .down))
+//            res.append((Point(x: point.x, y: point.y), .left))
+//            res.append((Point(x: point.x, y: point.y), .right))
+//        case .right:
+//            res.append((Point(x: point.x + 1, y: point.y), .right))
+//            res.append((Point(x: point.x, y: point.y), .up))
+//            res.append((Point(x: point.x, y: point.y), .down))
+//        case .left:
+//            res.append((Point(x: point.x - 1, y: point.y), .left))
+//            res.append((Point(x: point.x, y: point.y), .up))
+//            res.append((Point(x: point.x, y: point.y), .down))
+//        }
+//        
+//        return res
+//    }
+
 
 
     /// Gets the walkable neighboring points for a given point on the map.

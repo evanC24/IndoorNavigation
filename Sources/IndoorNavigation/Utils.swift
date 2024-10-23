@@ -42,6 +42,15 @@ public func calculateBearing(from start: Point, to end: Point) -> Float {
     return atan2(deltaY, deltaX)
 }
 
+/// Computes the Manhattan distance between two points.
+/// - Parameters:
+///   - a: The starting point as a `Point` object.
+///   - b: The ending point as a `Point` object.
+/// - Returns: The Manhattan distance as a float.
+public func ManhattanDistance(_ a: Point, _ b: Point) -> Float {
+    return abs(a.x - b.x) + abs(a.y - b.y)
+}
+
 /// Computes the Euclidean distance between two points.
 /// - Parameters:
 ///   - start: The starting point as a `Point` object.

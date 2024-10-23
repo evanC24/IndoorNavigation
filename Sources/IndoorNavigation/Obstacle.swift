@@ -18,10 +18,13 @@ public protocol Obstacle: Codable {
     /// - Parameter point: The `Point` for which the closest edge point is needed.
     /// - Returns: A `Point` representing the nearest edge point of the obstacle.
     func getClosestEdgePoint(of point: Point) -> Point
+    
+    func getAreaPoints() -> [Point]
 }
 
 /// A structure representing a rectangular obstacle.
 public struct RectangleObstacle: Obstacle, Codable {
+    
     /// The top-left corner of the rectangular obstacle.
     public let topLeft: Point
     
@@ -41,7 +44,7 @@ public struct RectangleObstacle: Obstacle, Codable {
     }
     
     /// Checks if a given point lies inside the obstacle.
-    /// - Parameter point: The `Point` to check against the obstacle.
+    /// - Parameter point: The `Point` to check if is in the obstacle.
     /// - Returns: `true` if the point is within the boundaries of the rectangle; otherwise, `false`.
     public func contains(point: Point) -> Bool {
         return point.x >= topLeft.x && point.x <= bottomRight.x &&
@@ -56,6 +59,41 @@ public struct RectangleObstacle: Obstacle, Codable {
         let clampedY = max(topLeft.y, min(bottomRight.y, point.y))
         return Point(x: clampedX, y: clampedY)
     }
+    
+    
+    /// Generates a grid of points representing the area covered by the obstacle.
+    /// - Returns: An array of `Point` objects representing the grid within the obstacle's bounding box.
+    public func getAreaPoints() -> [Point] {
+
+        let step: Float = 0.1
+        
+        var points: [Point] = []
+        
+        var y: Float = self.topLeft.y
+        while y <= self.bottomRight.y {
+            
+            var row = [Point]()
+            
+            var x: Float = self.topLeft.x
+            
+            while x <= self.bottomRight.x {
+                
+                let roundedX = roundToDecimal(x, places: 2)
+                let roundedY = roundToDecimal(y, places: 2)
+
+                row.append(Point(x: roundedX, y: roundedY, heading: nil, isWalkable: false))
+                
+                x += step
+            }
+            
+            points.append(contentsOf: row)
+            
+            y += step
+        }
+        return points
+    }
+
+    
     
     // MARK: - Codable Conformance
     
@@ -115,6 +153,12 @@ public struct RectangleObstacle: Obstacle, Codable {
 
 /// Represents a circular obstacle in a 2D space.
 public class CircleObstacle: Obstacle {
+    
+    public func getAreaPoints() -> [Point] {
+        // to do
+        return []
+    }
+    
     public let type: String = "Circle"
     public let center: Point
     public let radius: Float
