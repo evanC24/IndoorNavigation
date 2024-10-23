@@ -25,22 +25,22 @@ public class Map {
     public var points: [[Point]] = []
     
     /// A factor that determines the weight given to the direct distance when calculating movement cost.
-    public var shortestPathFactor: Float
+//    public var shortestPathFactor: Float
     
     /// A computed property that gives the weight for proximity penalty when calculating movement cost.
     /// It is derived as the complement of `shortestPathFactor`.
-    public var proximityObstacleFactor: Float { 1 - shortestPathFactor }
+//    public var proximityObstacleFactor: Float { 1 - shortestPathFactor }
 
     /// Initializes a `Map` instance with a given width, height, and a list of obstacles.
     /// - Parameters:
     ///   - width: The width of the map, representing the x-axis range.
     ///   - height: The height of the map, representing the y-axis range.
     ///   - obstacles: An array of `Obstacle` objects that define non-walkable regions on the map.
-    public init(width: Float, height: Float, obstacles: [any Obstacle], shortestPathFactor: Float) {
+    public init(width: Float, height: Float, obstacles: [any Obstacle] /*shortestPathFactor: Float*/) {
         self.width = width
         self.height = height
         self.obstacles = obstacles
-        self.shortestPathFactor = shortestPathFactor
+//        self.shortestPathFactor = shortestPathFactor
         self.generatePoints()
     }
 
@@ -188,28 +188,28 @@ public class Map {
     ///   - current: The current point.
     ///   - next: The next point to move to.
     /// - Returns: The calculated movement cost as a `Float`, where a lower value indicates a more preferable move.
-    public func cost(_ current: Point,_ next: Point) -> Float {
-
-        let distance = hypot(next.x - current.x, next.y - current.y)
-        
-        // Calculate a proximity penalty based on the closest obstacle
-        var penalty: Float = 0
-        
-        if let closestObstacleEdgePoint = self.obstacles.compactMap({ $0.getClosestEdgePoint(of: next) })
-            .min(by: { euclideanDistance(from: $0, to: next) < euclideanDistance(from: $1, to: next) }) {
-            
-            let closestBoundariesDistance = self.getClosestBoundariesDistance(from: next)
-            
-            let edgeDistance = euclideanDistance(from: next, to: closestObstacleEdgePoint)
-            
-            let closestDistance = min(closestBoundariesDistance, edgeDistance)
-            
-            // Invert the edge distance to create a penalty: closer points get a higher penalty
-            penalty = closestDistance == 0 ? Float.greatestFiniteMagnitude : 1 / closestDistance
-        }
-        
-        return shortestPathFactor * distance + proximityObstacleFactor * penalty
-    }
+//    public func cost(_ current: Point,_ next: Point) -> Float {
+//
+//        let distance = hypot(next.x - current.x, next.y - current.y)
+//        
+//        // Calculate a proximity penalty based on the closest obstacle
+//        var penalty: Float = 0
+//        
+//        if let closestObstacleEdgePoint = self.obstacles.compactMap({ $0.getClosestEdgePoint(of: next) })
+//            .min(by: { euclideanDistance(from: $0, to: next) < euclideanDistance(from: $1, to: next) }) {
+//            
+//            let closestBoundariesDistance = self.getClosestBoundariesDistance(from: next)
+//            
+//            let edgeDistance = euclideanDistance(from: next, to: closestObstacleEdgePoint)
+//            
+//            let closestDistance = min(closestBoundariesDistance, edgeDistance)
+//            
+//            // Invert the edge distance to create a penalty: closer points get a higher penalty
+//            penalty = closestDistance == 0 ? Float.greatestFiniteMagnitude : 1 / closestDistance
+//        }
+//        
+//        return shortestPathFactor * distance + proximityObstacleFactor * penalty
+//    }
 
     /// Calculates the minimum distance from a given point to the closest boundary of the area.
     /// - Parameter point: The point for which to find the closest distance to the boundaries.
