@@ -12,7 +12,7 @@ public protocol Obstacle: Codable {
     /// Checks if a given point lies inside the obstacle.
     /// - Parameter point: The `Point` to check.
     /// - Returns: `true` if the point is inside the obstacle, `false` otherwise.
-    func contains(point: Point) -> Bool
+    func contains(point: Point, safeArea: Bool) -> Bool
     
     /// Calculates the closest point on the edge of the obstacle relative to a given point.
     /// - Parameter point: The `Point` for which the closest edge point is needed.
@@ -46,9 +46,12 @@ public struct RectangleObstacle: Obstacle, Codable {
     /// Checks if a given point lies inside the obstacle.
     /// - Parameter point: The `Point` to check if is in the obstacle.
     /// - Returns: `true` if the point is within the boundaries of the rectangle; otherwise, `false`.
-    public func contains(point: Point) -> Bool {
-        return point.x >= topLeft.x && point.x <= bottomRight.x &&
-               point.y >= topLeft.y && point.y <= bottomRight.y
+    public func contains(point: Point, safeArea: Bool) -> Bool {
+        
+        let offset: Float = safeArea ? 0.35 : 0 // add a safe area
+        
+        return  point.x >= topLeft.x - offset && point.x <= bottomRight.x + offset &&
+                point.y >= topLeft.y - offset && point.y <= bottomRight.y + offset
     }
     
     /// Calculates the closest point on the edge of the obstacle relative to a given point.
@@ -168,7 +171,8 @@ public class CircleObstacle: Obstacle {
         self.radius = radius
     }
     
-    public func contains(point: Point) -> Bool {
+    public func contains(point: Point, safeArea: Bool) -> Bool {
+        // implement safe area
         let dx = point.x - center.x
         let dy = point.y - center.y
         return sqrt(dx*dx + dy*dy) <= radius

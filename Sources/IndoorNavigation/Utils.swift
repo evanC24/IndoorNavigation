@@ -47,8 +47,8 @@ public func calculateBearing(from start: Point, to end: Point) -> Float {
 ///   - a: The starting point as a `Point` object.
 ///   - b: The ending point as a `Point` object.
 /// - Returns: The Manhattan distance as a float.
-public func ManhattanDistance(_ a: Point, _ b: Point) -> Float {
-    return abs(a.x - b.x) + abs(a.y - b.y)
+public func manhattanDistance(_ a: Point, _ b: Point) -> Float {
+    return (abs(a.x - b.x) + abs(a.y - b.y))
 }
 
 /// Computes the Euclidean distance between two points.
@@ -61,6 +61,7 @@ public func euclideanDistance(from start: Point, to end: Point) -> Float {
     let deltaY = end.y - start.y
     return hypot(deltaX, deltaY)
 }
+
 
 /// Finds the closest point on a path to a given current location.
 /// - Parameters:
