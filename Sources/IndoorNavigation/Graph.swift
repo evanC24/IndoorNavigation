@@ -8,9 +8,6 @@ public struct Graph {
     /// A closure that returns the neighbors of a given point.
     public let neighbors: (Point) -> [Point]
     
-    /// A closure that returns the cost of moving from one point to another, considering a potential previous point.
-    public let cost: (Point, Point) -> Float
-    
     /// Performs the A* search algorithm to find the shortest path from the start to the end point.
      /// - Parameters:
      ///   - start: The starting point of the search.
@@ -31,7 +28,7 @@ public struct Graph {
         } heuristicFn: { point in
             heuristic(point, end)
         }
-        return path ?? []
+        return path?.reversed() ?? []
     }
 }
 
