@@ -2,22 +2,24 @@
 
 ## Project Description
 
-The objective of this project is to implement a Augmented Reality pathfinding algorithm in Swift, using a grid structure to represent a search space. The algorithm is designed to explore different movement possibilities and find the optimal path between a starting point and a destination within the grid minimizing turns. The current user indoor position is retrieved by an external library, developed in the preovious years by an alumni of the course. This app is an upgrade of PositioningLibrary demo app developed by Rosario Galioto.
-- PositioningLibrary: https://github.com/tirannosario/PositioningLibrary
-- Demo app: https://github.com/tirannosario/TestPositioningLibrary
+The objective of this project is to implement a Augmented Reality pathfinding algorithm in Swift, using a grid structure to represent a search space. The algorithm is designed to explore different movement possibilities and find the optimal path between a starting point and a destination within the grid minimizing turns and avoiding obstacles. The library also supports navigation on a map, providing a path and directional hints to reach a specific destination, and a map view to locate user location and end location.
+
+The current user indoor position is retrieved by an external library, developed in the preovious years by an alumni of the course. This app is an upgrade of PositioningLibrary demo app developed by Rosario Galioto.
+- [PositioningLibrary](https://github.com/tirannosario/PositioningLibrary) | [Demo](https://github.com/tirannosario/TestPositioningLibrary)
 
 ## Key Features
 
-- **Pathfinding Algorithm**: Identifies the optimal path between two points in a grid using AStar algorithm.
-- **Grid Configuration**: The grid is customizable in terms of size (width, height).
-- **Collision avoidance**: Obstacles (walls, tables, ecc...) can be placed to increase the complexity of the search and avoid any collision.
-- **Dynamic Path Visualization**: Graphical representation, such as an directional arrow, can guide the user towards the goal location suggesting the heading and the direction to get there
+- **Pathfinding Algorithm**: Identifies the optimal path between two points in a grid using A* pathfinding algorithm.
+- **Grid Configuration**: The grid, representing the map, is customizable in terms of size [width, height].
+- **Collision avoidance and defining obstacles**: Obstacles (walls, tables, ecc...) can be placed to increase the complexity of the search and avoid any collision.
+- **Dynamic Path Visualization**: Graphical representation, such as an directional arrow, can guide the user towards the goal location suggesting the heading and the direction to get there.
+- **Map**: A map view is available and it shows the map itself and its obstacles, the user location, the selected goal location and the path, if exists, from the current user position to the selected goal position
   
-## Requirements
+## Tools used
 
-- **Language**: Swift
-- **Platform**: iOS/macOS
-- **Libraries Used**: PositioningLibrary.
+- **Language**: Swift and SwiftUI
+- **Platform**: iOS 13.0 or higher
+- **Libraries Used**: PositioningLibrary, SwiftPriorityQueue.
 
 ## Data setup
 A .json file must be provided to upload **end locations** and **obstacles** for each **floorId**
@@ -96,8 +98,7 @@ The `Map` class provides a 2D grid-based representation for indoor navigation. I
 
 - **Grid-based map generation**: Creates a 2D array of `Point` objects based on the specified map dimensions.
 - **Obstacle handling**: Defines non-walkable areas on the map using obstacles.
-- **Pathfinding**: Supports finding the shortest path between two points using a customizable cost function that includes distance and obstacle proximity.
-- **Turn penalty**: Adds a penalty for sharp turns during pathfinding to simulate smoother paths.
+- **Pathfinding**: Supports finding the shortest path between two points using a customizable cost function that includes proximity from obstacles.
 
 ### Usage
 
@@ -123,9 +124,9 @@ if !path.isEmpty {
 }
 ```
 
-## MapView: Path Visualization in SwiftUI
+## MapView: Maph, obstacles, user location, goal location and path visualization
 
-This project provides a customizable SwiftUI `MapView` that visualizes a path on a 2D map, supporting various features such as user-defined obstacles, path plotting, and zoom gestures. It is intended for applications that require map-based navigation or visual representation of paths with obstacles.
+This project provides a customizable SwiftUI `MapView` that visualizes a path on a 2D map, supporting various features such as predefined obstacles, path plotting, and zoom gestures. It is intended for applications that require map-based navigation or visual representation of paths with obstacles.
 
 ### Features
 
@@ -165,6 +166,8 @@ struct ContentView: View {
     }
 }
 ```
+
+
 ## Obstacle Protocol 
 
 This repository contains the definition and implementations of the `Obstacle` protocol in Swift, designed to represent various types of obstacles in a 2D space. The protocol requires conforming types to determine if a point is within the obstacle and to calculate the closest point on its edge. Several obstacle types, including rectangles and circles, are implemented.
@@ -176,12 +179,15 @@ This repository contains the definition and implementations of the `Obstacle` pr
 - `contains(point: Point) -> Bool`: Checks if a given point lies inside the obstacle.
 - `getClosestEdgePoint(of point: Point) -> Point`: Returns the closest point on the edge relative to the input point.
 - `getAreaPoints() -> [Point]`: Generates an array of `Point` objects covering the obstacle's area.
+- `distanceTo(point: Point) -> Float`: Calculates the Euclidean distance from a specified point to the obstacle.
+  
 ```swift
 public protocol Obstacle: Codable {
     var type: String { get }
     func contains(point: Point) -> Bool
     func getClosestEdgePoint(of point: Point) -> Point
     func getAreaPoints() -> [Point]
+    func distanceTo(point: Point) -> Float
 }
 ```
 
@@ -224,7 +230,7 @@ print(point.description)
 
 ## Credits
 - **Author Name**: Ivan Coppola
-- **University**: University of Milan
+- **University**: University of Milan La Statale
 - **Course**: MobiDev
 
 ## License
