@@ -77,30 +77,35 @@ public func backtrack<T>(_ goalNode: Node<T>) -> [T] {
 /// - parameter successorFn: A function that finds the next states from a state.
 /// - parameter heuristicFn: A function that makes an underestimate of distance from a state to the goal.
 /// - returns: A path from the start state to a goal state as an array.
-public func astar<T: Hashable>(_ initialState: T, goalTestFn: (T) -> Bool, successorFn: (T) -> [T], heuristicFn: (T) -> Float) -> [T]? {
+public func astar<T: Hashable>(
+    _ initialState: T,
+    goalTestFn: (T) -> Bool,
+    successorFn: (T) -> [T],
+    costFn: (T) -> Float,
+    heuristicFn: (T) -> Float
+) -> [T]? {
     var frontier = PriorityQueue(ascending: true, startingValues: [Node(state: initialState, parent: nil, cost: 0, heuristic: heuristicFn(initialState))])
     var explored = Dictionary<T, Float>()
     explored[initialState] = 0
     var nodesSearched: Int = 0
-    
+
     while let currentNode = frontier.pop() {
         nodesSearched += 1
-          // we know if there are still items, we can pop one
         let currentState = currentNode.state
-        
+
         if goalTestFn(currentState) {
             print("Searched \(nodesSearched) nodes.")
             return backtrack(currentNode)
         }
-        
+
         for child in successorFn(currentState) {
-            let newcost = currentNode.cost + 1  //1 assumes a grid, there should be a cost function
-            if (explored[child] == nil) || (explored[child]! > newcost) {
-                explored[child] = newcost
-                frontier.push(Node(state: child, parent: currentNode, cost: newcost, heuristic: heuristicFn(child)))
+            let newCost = currentNode.cost + costFn(currentNode.state) + 1
+            if explored[child] == nil || explored[child]! > newCost {
+                explored[child] = newCost
+                frontier.push(Node(state: child, parent: currentNode, cost: newCost, heuristic: heuristicFn(child)))
             }
         }
     }
-    
+
     return nil
 }

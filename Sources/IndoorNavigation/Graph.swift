@@ -9,35 +9,38 @@ public struct Graph {
     public let neighbors: (Point) -> [Point]
     
     /// Performs the A* search algorithm to find the shortest path from the start to the end point.
-     /// - Parameters:
-     ///   - start: The starting point of the search.
-     ///   - end: The goal point of the search.
-     ///   - heuristic: A function that estimates the distance from the current point to the goal.
-     /// - Returns: A tuple containing:
-     ///   - `cameFrom`: A dictionary that maps each point to its preceding point in the path.
-     ///   - `costSoFar`: A dictionary that maps each point to the cost incurred to reach it.
+    /// - Parameters:
+    ///   - start: The starting point of the search.
+    ///   - end: The goal point of the search.
+    ///   - cost: A function that computes the movement cost for each point.
+    ///   - heuristic: A heuristic function that estimates the distance between a given point and the goal point.
+    /// - Returns: An optional array of points representing the shortest path from the start to the end point.
+    ///   If no path exists, returns `nil`.
     public func aStarSearch(
         start: Point,
         end: Point,
+        cost: (Point) -> Float,
         heuristic: (Point, Point) -> Float
-    ) -> [Point] {
+    ) -> [Point]? {
         let path = astar(start) { point in
             point == end
         } successorFn: { point in
             self.neighbors(point)
+        } costFn: { point in
+            cost(point)
         } heuristicFn: { point in
             heuristic(point, end)
         }
-        return path?.reversed() ?? []
+        return path?.reversed()
     }
-}
-
-/// Reconstructs the path from the start point to the goal point using the `cameFrom` map.
+    
+    /// Reconstructs the path from the start point to the goal point using the `cameFrom` map.
     /// - Parameters:
-    ///   - cameFrom: A dictionary mapping each point to its preceding point in the path.
+    ///   - cameFrom: A dictionary that maps each point to its preceding point in the path.
     ///   - start: The starting point of the path.
     ///   - goal: The goal point of the path.
-    /// - Returns: An array of points representing the path from start to goal. If no valid path exists, returns an empty array.
+    /// - Returns: An array of points representing the reconstructed path from the start to the goal.
+    ///   If the goal is not reachable, returns an empty array.
     func reconstructPath(
         cameFrom: [Point: Point?],
         start: Point,
@@ -65,6 +68,6 @@ public struct Graph {
         }
         
         // Add the start point and reverse the path to get the correct order.
-//            path.append(start)
         return path.reversed()
     }
+}

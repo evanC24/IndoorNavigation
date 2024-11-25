@@ -77,3 +77,30 @@ public func findClosestPathPoint(path: [Point], from currentLocation: Point) -> 
     return path.min(by: { euclideanDistance(from: $0, to: currentLocation) < euclideanDistance(from: $1, to: currentLocation) })
 }
 
+
+/// Verifica se esiste una linea di vista tra due punti senza ostacoli.
+/// - Parameters:
+///   - start: Il punto di partenza.
+///   - end: Il punto di arrivo.
+///   - obstacles: Un array di ostacoli (conformi al protocollo `Obstacle`).
+/// - Returns: `true` se la linea tra `start` ed `end` non interseca nessun ostacolo, altrimenti `false`.
+@available(iOS 13.0, *)
+func isLineOfSight(start: Point, end: Point, obstacles: [Obstacle]) -> Bool {
+    let steps: Int = 100 // Numero di campionamenti tra i due punti
+    let dx = (end.x - start.x) / Float(steps)
+    let dy = (end.y - start.y) / Float(steps)
+    
+    for i in 0...steps {
+        let x = start.x + dx * Float(i)
+        let y = start.y + dy * Float(i)
+        let currentPoint = Point(x: x, y: y)
+        
+        // Verifica se il punto corrente è all'interno di un ostacolo
+        if obstacles.contains(where: { $0.contains(point: currentPoint, safeArea: true) }) {
+            return false
+        }
+    }
+    return true
+}
+
+

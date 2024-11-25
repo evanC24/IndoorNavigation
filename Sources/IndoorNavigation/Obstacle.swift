@@ -1,40 +1,49 @@
 import Foundation
 
 @available(iOS 13.0, *)
-/// A protocol that defines an obstacle in a 2D space.
-/// Objects conforming to this protocol must be able to identify if a point lies within them
-/// and provide the closest point on their edge to a given point.
+/// Defines a protocol for representing obstacles in a 2D space.
+/// Conforming types must implement methods to determine point inclusion, calculate distances,
+/// and identify the closest edge points.
 public protocol Obstacle: Codable {
     
-    /// The type description of the obstacle, typically used for decoding.
+    /// A string representing the type of the obstacle, typically for decoding purposes.
     var type: String { get }
     
-    /// Checks if a given point lies inside the obstacle.
-    /// - Parameter point: The `Point` to check.
+    /// Determines if a specified point lies within the obstacle's boundaries.
+    /// - Parameters:
+    ///   - point: The `Point` to evaluate.
+    ///   - safeArea: A boolean indicating whether to include a margin around the obstacle.
     /// - Returns: `true` if the point is inside the obstacle, `false` otherwise.
     func contains(point: Point, safeArea: Bool) -> Bool
     
-    /// Calculates the closest point on the edge of the obstacle relative to a given point.
-    /// - Parameter point: The `Point` for which the closest edge point is needed.
-    /// - Returns: A `Point` representing the nearest edge point of the obstacle.
+    /// Computes the closest point on the obstacle's edge relative to a specified point.
+    /// - Parameter point: The `Point` for which the closest edge point is required.
+    /// - Returns: The nearest `Point` on the obstacle's edge.
     func getClosestEdgePoint(of point: Point) -> Point
     
+    /// Generates a list of points representing the area covered by the obstacle.
+    /// - Returns: An array of `Point` objects within the obstacle.
     func getAreaPoints() -> [Point]
+    
+    /// Calculates the Euclidean distance from a specified point to the obstacle.
+    /// - Parameter point: The `Point` from which the distance is measured.
+    /// - Returns: A `Float` value representing the distance.
+    func distanceTo(point: Point) -> Float
 }
 
-/// A structure representing a rectangular obstacle.
+/// Represents a rectangular obstacle defined by two corner points.
 public struct RectangleObstacle: Obstacle, Codable {
     
-    /// The top-left corner of the rectangular obstacle.
+    /// The top-left corner of the rectangle.
     public let topLeft: Point
     
-    /// The bottom-right corner of the rectangular obstacle.
+    /// The bottom-right corner of the rectangle.
     public let bottomRight: Point
     
-    /// Type description for the obstacle, useful during decoding.
+    /// A string describing the obstacle type.
     public let type: String = "RectangleObstacle"
     
-    /// Initializes a new `RectangleObstacle` with the given top-left and bottom-right points.
+    /// Initializes a rectangular obstacle with specified corner points.
     /// - Parameters:
     ///   - topLeft: The top-left corner of the rectangle.
     ///   - bottomRight: The bottom-right corner of the rectangle.
@@ -43,71 +52,65 @@ public struct RectangleObstacle: Obstacle, Codable {
         self.bottomRight = bottomRight
     }
     
-    /// Checks if a given point lies inside the obstacle.
-    /// - Parameter point: The `Point` to check if is in the obstacle.
-    /// - Returns: `true` if the point is within the boundaries of the rectangle; otherwise, `false`.
+    /// Determines if a point is inside the rectangle, considering an optional safe area.
+    /// - Parameters:
+    ///   - point: The `Point` to check.
+    ///   - safeArea: A flag to enable or disable the safe area margin.
+    /// - Returns: `true` if the point lies within the adjusted rectangle boundaries.
     public func contains(point: Point, safeArea: Bool) -> Bool {
-        
-        let offset: Float = safeArea ? 0.35 : 0 // add a safe area
-        
-        return  point.x >= topLeft.x - offset && point.x <= bottomRight.x + offset &&
-                point.y >= topLeft.y - offset && point.y <= bottomRight.y + offset
+        let offset: Float = safeArea ? 0.35 : 0
+        return point.x >= topLeft.x - offset &&
+               point.x <= bottomRight.x + offset &&
+               point.y >= topLeft.y - offset &&
+               point.y <= bottomRight.y + offset
     }
     
-    /// Calculates the closest point on the edge of the obstacle relative to a given point.
-    /// - Parameter point: The `Point` for which the closest edge point is needed.
-    /// - Returns: A `Point` representing the nearest edge point of the obstacle.
+    /// Identifies the closest point on the rectangle's edge relative to a given point.
+    /// - Parameter point: The `Point` for which the closest edge point is calculated.
+    /// - Returns: A `Point` on the rectangle's edge nearest to the input point.
     public func getClosestEdgePoint(of point: Point) -> Point {
         let clampedX = max(topLeft.x, min(bottomRight.x, point.x))
         let clampedY = max(topLeft.y, min(bottomRight.y, point.y))
         return Point(x: clampedX, y: clampedY)
     }
     
-    
-    /// Generates a grid of points representing the area covered by the obstacle.
-    /// - Returns: An array of `Point` objects representing the grid within the obstacle's bounding box.
+    /// Generates a grid of points covering the rectangle's area.
+    /// - Returns: An array of `Point` objects representing the covered area.
     public func getAreaPoints() -> [Point] {
-
         let step: Float = 0.1
-        
         var points: [Point] = []
-        
-        var y: Float = self.topLeft.y
-        while y <= self.bottomRight.y {
-            
-            var row = [Point]()
-            
-            var x: Float = self.topLeft.x
-            
-            while x <= self.bottomRight.x {
-                
-                let roundedX = roundToDecimal(x, places: 2)
-                let roundedY = roundToDecimal(y, places: 2)
-
-                row.append(Point(x: roundedX, y: roundedY, heading: nil, isWalkable: false))
-                
+        var y: Float = topLeft.y
+        while y <= bottomRight.y {
+            var x: Float = topLeft.x
+            while x <= bottomRight.x {
+                points.append(Point(x: roundToDecimal(x, places: 2),
+                                    y: roundToDecimal(y, places: 2),
+                                    heading: nil,
+                                    isWalkable: false))
                 x += step
             }
-            
-            points.append(contentsOf: row)
-            
             y += step
         }
         return points
     }
-
     
+    /// Calculates the shortest distance from a given point to the rectangle.
+    /// - Parameter point: The `Point` for which the distance is computed.
+    /// - Returns: A `Float` value indicating the distance.
+    public func distanceTo(point: Point) -> Float {
+        let dx = max(topLeft.x - point.x, 0, point.x - bottomRight.x)
+        let dy = max(topLeft.y - point.y, 0, point.y - bottomRight.y)
+        return sqrt(dx * dx + dy * dy)
+    }
     
     // MARK: - Codable Conformance
     
     enum CodingKeys: String, CodingKey {
-        case topLeft
-        case bottomRight
-        case type
+        case topLeft, bottomRight, type
     }
     
-    /// Custom decoding logic to initialize from a decoder.
-    /// - Parameter decoder: The decoder to use for decoding the `RectangleObstacle`.
+    /// Decodes a `RectangleObstacle` from a serialized representation.
+    /// - Parameter decoder: The decoder instance to use.
     /// - Throws: An error if decoding fails.
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -115,8 +118,8 @@ public struct RectangleObstacle: Obstacle, Codable {
         self.bottomRight = try container.decode(Point.self, forKey: .bottomRight)
     }
     
-    /// Encodes this `RectangleObstacle` into the given encoder.
-    /// - Parameter encoder: The encoder to use for encoding the `RectangleObstacle`.
+    /// Encodes the rectangle obstacle into a serialized format.
+    /// - Parameter encoder: The encoder instance to use.
     /// - Throws: An error if encoding fails.
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
@@ -126,196 +129,62 @@ public struct RectangleObstacle: Obstacle, Codable {
     }
 }
 
-
-
-//public class Table: RectangleObstacle {
-//    // Designated initializer
-//    public init(topLeft: Point, bottomRight: Point) {
-//        super.init(type: "Table", topLeft: topLeft, bottomRight: bottomRight)
-//    }
-//
-//    // Required initializer for decoding
-//    public required init(from decoder: Decoder) throws {
-//        try super.init(from: decoder)
-//    }
-//}
-//
-//public class Wall: RectangleObstacle {
-//    // Designated initializer
-//    public init(topLeft: Point, bottomRight: Point) {
-//        super.init(type: "Wall", topLeft: topLeft, bottomRight: bottomRight)
-//    }
-//
-//    // Required initializer for decoding
-//    public required init(from decoder: Decoder) throws {
-//        try super.init(from: decoder)
-//    }
-//}
-
-
-
-/// Represents a circular obstacle in a 2D space.
+/// Represents a circular obstacle defined by its center and radius.
 public class CircleObstacle: Obstacle {
     
-    public func getAreaPoints() -> [Point] {
-        // to do
-        return []
-    }
-    
+    /// A string describing the obstacle type.
     public let type: String = "Circle"
+    
+    /// The center point of the circle.
     public let center: Point
+    
+    /// The radius of the circle.
     public let radius: Float
     
+    /// Initializes a circular obstacle with a specified center and radius.
+    /// - Parameters:
+    ///   - center: The center `Point` of the circle.
+    ///   - radius: The radius of the circle.
     public init(center: Point, radius: Float) {
         self.center = center
         self.radius = radius
     }
     
+    /// Determines if a point lies within the circle's boundary.
+    /// - Parameters:
+    ///   - point: The `Point` to evaluate.
+    ///   - safeArea: A flag to enable or disable a margin around the circle.
+    /// - Returns: `true` if the point is within the circle.
     public func contains(point: Point, safeArea: Bool) -> Bool {
-        // implement safe area
         let dx = point.x - center.x
         let dy = point.y - center.y
-        return sqrt(dx*dx + dy*dy) <= radius
+        return sqrt(dx * dx + dy * dy) <= radius
     }
     
+    /// Identifies the closest point on the circle's edge relative to a given point.
+    /// - Parameter point: The `Point` for which the closest edge point is calculated.
+    /// - Returns: A `Point` on the circle's edge nearest to the input point.
     public func getClosestEdgePoint(of point: Point) -> Point {
         let dx = point.x - center.x
         let dy = point.y - center.y
-        let distance = sqrt(dx*dx + dy*dy)
+        let distance = sqrt(dx * dx + dy * dy)
         let closestX = center.x + (dx / distance) * radius
         let closestY = center.y + (dy / distance) * radius
         return Point(x: closestX, y: closestY, heading: nil, isWalkable: true)
     }
     
+    /// Generates points representing the circle's area (not implemented).
+    public func getAreaPoints() -> [Point] {
+        // TODO: Implement area point generation for circles.
+        return []
+    }
+    
+    /// Calculates the shortest distance from a given point to the circle.
+    /// - Parameter point: The `Point` for which the distance is computed.
+    /// - Returns: A `Float` value indicating the distance.
+    public func distanceTo(point: Point) -> Float {
+        let dx = point.x - center.x
+        let dy = point.y - center.y
+        return abs(sqrt(dx * dx + dy * dy) - radius)
+    }
 }
-
-
-//struct Obstacle {
-//    private let topLeft: Point
-//    private let bottomRight: Point
-//    private let step: Float = 0.1
-//    
-//    lazy var points: [(Float, Float)] = {
-//        var points: [(Float, Float)] = []
-//        var y: Float = topLeft.y
-//        while y <= bottomRight.y {
-//            var x: Float = topLeft.x
-//            while x <= bottomRight.x {
-//                let roundedX = roundToDecimal(x, places: 2)
-//                let roundedY = roundToDecimal(y, places: 2)
-//                points.append((roundedX, roundedY))
-//                x += step
-//            }
-//            y += step
-//        }
-//        return points
-//    }()
-//    
-//    init(topLeft: Point, bottomRight: Point) {
-//        self.topLeft = topLeft
-//        self.bottomRight = bottomRight
-//    }
-//    
-//    func contains(point: Point) -> Bool {
-//        return point.x >= topLeft.x && point.x <= bottomRight.x &&
-//               point.y >= topLeft.y && point.y <= bottomRight.y
-//    }
-//}
-
-
-
-
-//@available(iOS 13.0, *)
-///// A type-erased obstacle that can represent any specific obstacle type.
-//public struct AnyObstacle: Obstacle, Codable {
-//    public let id: UUID
-//    public let type: String
-//    
-//    private let base: AnyObstacleBase
-//    
-//    // Type erasure
-//    private enum AnyObstacleBase {
-//        case rectangle(RectangleObstacle)
-//        case circle(CircleObstacle)
-//    }
-//
-//    // Custom initializer for decoding
-//    public init(from decoder: Decoder) throws {
-//        let container = try decoder.container(keyedBy: CodingKeys.self)
-//        self.type = try container.decode(String.self, forKey: .type)
-//        
-//        switch type {
-//        case "Table":
-//            let topLeft = try container.decode(Point.self, forKey: .topLeft)
-//            let bottomRight = try container.decode(Point.self, forKey: .bottomRight)
-//            let table = Table(topLeft: topLeft, bottomRight: bottomRight)
-//            self.base = .rectangle(table)
-//            self.id = table.id
-//            
-//        case "Wall":
-//            let topLeft = try container.decode(Point.self, forKey: .topLeft)
-//            let bottomRight = try container.decode(Point.self, forKey: .bottomRight)
-//            let wall = Wall(topLeft: topLeft, bottomRight: bottomRight)
-//            self.base = .rectangle(wall)
-//            self.id = wall.id
-//            
-//        case "Circle":
-//            let center = try container.decode(Point.self, forKey: .center)
-//            let radius = try container.decode(Float.self, forKey: .radius)
-//            let circle = CircleObstacle(center: center, radius: radius)
-//            self.base = .circle(circle)
-//            self.id = circle.id
-//            
-//        default:
-//            throw DecodingError.dataCorruptedError(forKey: .type, in: container, debugDescription: "Unknown obstacle type.")
-//        }
-//    }
-//
-//    // Custom encoding function
-//    public func encode(to encoder: Encoder) throws {
-//        var container = encoder.container(keyedBy: CodingKeys.self)
-//        try container.encode(type, forKey: .type)
-//        try container.encode(id, forKey: .id)
-//        
-//        switch base {
-//        case .rectangle(let rectangle):
-//            try container.encode(rectangle.topLeft, forKey: .topLeft)
-//            try container.encode(rectangle.bottomRight, forKey: .bottomRight)
-//        case .circle(let circle):
-//            try container.encode(circle.center, forKey: .center)
-//            try container.encode(circle.radius, forKey: .radius)
-//        }
-//    }
-//
-//    enum CodingKeys: String, CodingKey {
-//        case type
-//        case id
-//        case topLeft
-//        case bottomRight
-//        case center
-//        case radius
-//    }
-//
-//    // Implement required methods for the Obstacle protocol
-//    public func contains(point: Point) -> Bool {
-//        switch base {
-//        case .rectangle(let rectangle):
-//            return rectangle.contains(point: point)
-//        case .circle(let circle):
-//            return circle.contains(point: point)
-//        }
-//    }
-//    
-//    public func getClosestEdgePoint(of point: Point) -> Point {
-//        switch base {
-//        case .rectangle(let rectangle):
-//            return rectangle.getClosestEdgePoint(of: point)
-//        case .circle(let circle):
-//            return circle.getClosestEdgePoint(of: point)
-//        }
-//    }
-//    
-//    public static func == (lhs: AnyObstacle, rhs: AnyObstacle) -> Bool {
-//        return lhs.id == rhs.id
-//    }
-//}

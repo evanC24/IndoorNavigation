@@ -1,25 +1,81 @@
 import SwiftUI
 
-/// A view that draws a map with a given width and height, and plots a path using an array of points.
+/// A SwiftUI view that visually represents a navigable map with features including paths, obstacles, and interactive transformations.
+/// This view supports dynamic scaling, panning, and rotation for enhanced navigation and visualization.
+/// - Available: iOS 15.0+
+///
+/// ## Features
+/// - Displays a 2D map with obstacles and a predefined path.
+/// - Marks the current location and the target location with customizable icons.
+/// - Interactive gestures such as zoom, pan, and reset transformations.
+/// - Fully customizable dimensions for real-world and view coordinates.
+///
+/// ## Usage
+/// This view is intended for applications that require map rendering and visualization, such as navigation apps or spatial planning tools.
 @available(iOS 15.0, *)
 public struct MapView: View {
-    public var pathPoints: [Point]
-    public var endLocation: Point?
-    public var currentLocation: Point?
-    public var obstacles: [any Obstacle]
-    public var maxWidth: CGFloat // Real-world max width in meters
-    public var maxHeight: CGFloat // Real-world max height in meters
-    public var viewWidth: CGFloat // Width of the SwiftUI view in points
-    public var viewHeight: CGFloat // Height of the SwiftUI view in points
-    public var isGestureEnabled: Bool = false
+    // MARK: - Properties
     
+    /// The list of points defining the path to be drawn on the map.
+    public var pathPoints: [Point]
+    
+    /// The end location of the path, represented as a `Point`.
+    public var endLocation: Point?
+    
+    /// The current location of the user or entity, represented as a `Point`.
+    public var currentLocation: Point?
+    
+    /// An array of obstacles to be drawn on the map. Supports any type conforming to the `Obstacle` protocol.
+    public var obstacles: [any Obstacle]
+    
+    /// The maximum real-world width of the map in meters.
+    public var maxWidth: CGFloat
+    
+    /// The maximum real-world height of the map in meters.
+    public var maxHeight: CGFloat
+    
+    /// The width of the rendered view in points (screen coordinates).
+    public var viewWidth: CGFloat
+    
+    /// The height of the rendered view in points (screen coordinates).
+    public var viewHeight: CGFloat
+    
+    /// A Boolean flag enabling or disabling gesture interactions.
+    public var isGestureEnabled: Bool
+    
+    // MARK: - State Variables
+    
+    /// The current scale factor applied during zooming gestures.
     @State private var currentScale: CGFloat = 1.0
+    
+    /// The final scale factor after zooming gestures.
     @State private var finalScale: CGFloat = 1.0
+    
+    /// The current rotation angle during rotation gestures.
     @State private var currentRotation: Angle = .zero
+    
+    /// The final rotation angle after rotation gestures.
     @State private var finalRotation: Angle = .zero
+    
+    /// The current offset applied during panning gestures.
     @State private var currentOffset: CGSize = .zero
+    
+    /// The final offset after panning gestures.
     @State private var finalOffset: CGSize = .zero
     
+    // MARK: - Initializer
+    
+    /// Creates a `MapView` instance with specified properties.
+    /// - Parameters:
+    ///   - pathPoints: The list of points forming the path to render.
+    ///   - endLocation: The target location as a `Point`, optional.
+    ///   - currentLocation: The current location as a `Point`, optional.
+    ///   - obstacles: An array of obstacles conforming to `Obstacle`.
+    ///   - maxWidth: The real-world width of the map in meters.
+    ///   - maxHeight: The real-world height of the map in meters.
+    ///   - viewWidth: The width of the SwiftUI view in points.
+    ///   - viewHeight: The height of the SwiftUI view in points.
+    ///   - enableGestures: A flag to enable or disable gestures (default is `false`).
     public init(
         pathPoints: [Point],
         endLocation: Point?,
@@ -41,6 +97,9 @@ public struct MapView: View {
         self.viewHeight = viewHeight
         self.isGestureEnabled = enableGestures
     }
+    
+    
+    // MARK: - Body
     
     public var body: some View {
         let scaleX = viewWidth / maxWidth
@@ -91,7 +150,7 @@ public struct MapView: View {
                 if let endLocation = endLocation {
                     Image(systemName: "flag.checkered")
                         .resizable()
-                        .frame(width: 24, height: 24)
+                        .frame(width: 12, height: 12)
                         .foregroundStyle(.background)
                         .position(
                             x: CGFloat(endLocation.x) * scaleX,
@@ -104,7 +163,7 @@ public struct MapView: View {
                     Image(systemName: "location.fill")
                         .foregroundStyle(.blue)
                         .rotationEffect(.radians(CGFloat(-currentLocation.heading) - CGFloat.pi / 4))
-                        .animation(.easeOut, value: (CGFloat(-currentLocation.heading) - CGFloat.pi / 4))
+//                        .animation(.easeOut, value: (CGFloat(-currentLocation.heading) - CGFloat.pi / 4))
                         .position(
                             x: CGFloat(currentLocation.x) * scaleX,
                             y: CGFloat(currentLocation.y) * scaleY
@@ -113,42 +172,39 @@ public struct MapView: View {
             }
             .frame(width: viewWidth, height: viewHeight)
             .scaleEffect(zoomScale)
-            .rotationEffect(finalRotation + currentRotation)
+//            .rotationEffect(finalRotation + currentRotation)
             .offset(x: finalOffset.width + currentOffset.width, y: finalOffset.height + currentOffset.height)
-            .clipped() // Ensure the map stays within bounds
-            .gesture(
-                SimultaneousGesture(
-                    MagnificationGesture()
-                        .onChanged { value in currentScale = value }
-                        .onEnded { value in
-                            if finalScale * currentScale < 1 {
-                                finalScale = 1
-                            } else if finalScale * currentScale > 3 {
-                                finalScale = 3
-                            } else {
-                                finalScale *= currentScale
-                            }
-                            currentScale = 1
-                        },
-                    RotationGesture()
-                        .onChanged { angle in currentRotation = angle }
-                        .onEnded { angle in
-                            finalRotation += currentRotation
-                            currentRotation = .zero
-                        }
-                )
-                .simultaneously(with:
-                                    DragGesture()
-                    .onChanged { value in
-                        currentOffset = value.translation
-                    }
-                    .onEnded { value in
-                        finalOffset.width = applyBoundaryConstraints(value: finalOffset.width + currentOffset.width, withZoom: zoomScale)
-                        finalOffset.height = applyBoundaryConstraints(value: finalOffset.height + currentOffset.height, withZoom: zoomScale)
-                        currentOffset = .zero
-                    }
-                               )
-            )
+            .clipped()
+//            .gesture(
+//                SimultaneousGesture(
+//                    MagnificationGesture()
+//                        .onChanged { value in
+//                            let potentialScale = finalScale * value
+//                            currentScale = max(1 / finalScale, min(3 / finalScale, value)) // Constrain the current scale
+//                        }
+//                        .onEnded { value in
+//                            let potentialScale = finalScale * currentScale
+//                            finalScale = max(1, min(3, potentialScale)) // Constrain the final scale
+//                            currentScale = 1
+//                        },
+//                    DragGesture()
+//                        .onChanged { value in
+//                            let zoomScale = finalScale * currentScale
+//                            dump(value)
+//                            currentOffset.width = applyBoundaryConstraints(value: finalOffset.width + value.translation.width, withZoom: zoomScale)
+//                            currentOffset.height = applyBoundaryConstraints(value: finalOffset.height + value.translation.height, withZoom: zoomScale)
+//                        }
+//                        .onEnded { value in
+//                            let zoomScale = finalScale * currentScale
+//                            finalOffset.width = applyBoundaryConstraints(value: finalOffset.width + value.translation.width, withZoom: zoomScale)
+//                            finalOffset.height = applyBoundaryConstraints(value: finalOffset.height + value.translation.height, withZoom: zoomScale)
+//                            currentOffset = .zero
+//                        }
+//
+//                )
+//            )
+
+            
             buttons
         }
     }
@@ -196,7 +252,8 @@ public struct MapView: View {
         }
     }
     
-    // Function to reset zoom, rotation, and offset
+    
+    /// Resets the zoom, rotation, and panning transformations to their default states.
     private func resetTransformations() {
         withAnimation {
             finalScale = 1.0
@@ -205,28 +262,30 @@ public struct MapView: View {
         }
     }
     
-    // Function to zoom in
+    /// Increases the zoom level with constraints.
     private func zoomIn() {
         withAnimation {
             finalScale = finalScale * 1.5 > 3 ? 3 : finalScale * 1.5
         }
     }
     
-    // Function to zoom out
+    /// Decreases the zoom level with constraints.
     private func zoomOut() {
         withAnimation {
             finalScale = finalScale / 1.5 < 1 ? 1 : finalScale / 1.5
         }
     }
 
+    /// Applies boundary constraints to the panning offset.
+    /// - Parameters:
+    ///   - value: The proposed offset value.
+    ///   - zoomScale: The current zoom scale.
+    /// - Returns: The constrained offset value.
     private func applyBoundaryConstraints(value: CGFloat, withZoom zoomScale: CGFloat) -> CGFloat {
-        // Define your boundaries
         let maxOffsetX = (viewWidth * zoomScale - viewWidth) / 2
         let maxOffsetY = (viewHeight * zoomScale - viewHeight) / 2
         
-        // Apply your constraints to the value
-        return min(max(value, -maxOffsetX), maxOffsetX) // Adjust for X dimension
-        // You should implement similar logic for Y if needed
+        return min(max(value, -maxOffsetX), maxOffsetX)
     }
 }
 
