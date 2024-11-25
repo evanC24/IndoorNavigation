@@ -4,6 +4,8 @@
 
 The objective of this project is to implement a Augmented Reality pathfinding algorithm in Swift, using a grid structure to represent a search space. The algorithm is designed to explore different movement possibilities and find the optimal path between a starting point and a destination within the grid minimizing turns and avoiding obstacles. The library also supports navigation on a map, providing a path and directional hints to reach a specific destination, and a map view to locate user location and end location.
 
+[Video demo](https://www.youtube.com/shorts/uZOR8UaaLJM)
+
 The current user indoor position is retrieved by an external library, developed in the preovious years by an alumni of the course. This app is an upgrade of PositioningLibrary demo app developed by Rosario Galioto.
 - [PositioningLibrary](https://github.com/tirannosario/PositioningLibrary) | [Demo](https://github.com/tirannosario/TestPositioningLibrary)
 
